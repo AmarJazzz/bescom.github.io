@@ -2,64 +2,90 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>BESCOM Subsidy Predictor</title>
+<title>BESCOM Gruha Jyothi – LT1 Rural</title>
 <style>
-body {font-family: Arial; background:#f5f5f5; padding:15px;}
-.card {background:#fff;padding:15px;border-radius:10px;box-shadow:0 0 10px rgba(0,0,0,.1)}
-input,button {width:100%;padding:12px;margin:10px 0;font-size:16px}
-button {background:#007bff;color:white;border:none;border-radius:8px}
-.green {color:green;font-weight:bold}
-.red {color:red;font-weight:bold}
-.orange {color:orange;font-weight:bold}
+body{margin:0;background:#eef2f7;font-family:system-ui}
+.app{max-width:420px;margin:auto;padding:16px}
+.card{background:#fff;border-radius:14px;padding:18px;box-shadow:0 6px 20px rgba(0,0,0,.1)}
+h2{text-align:center;color:#003366;margin-top:0}
+input,button{width:100%;padding:12px;margin-top:10px;font-size:16px;border-radius:10px;border:1px solid #ccc}
+button{background:#0066ff;color:#fff;border:none;font-weight:bold}
+.green{color:#0a8a00;font-weight:bold}
+.orange{color:#cc7a00;font-weight:bold}
+.red{color:#cc0000;font-weight:bold}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.box{background:#f5f7fb;padding:10px;border-radius:8px;text-align:center}
 </style>
 </head>
 <body>
 
+<div class="app">
 <div class="card">
-<h2>BESCOM Free Power Calculator</h2>
+<h2>Gruha Jyothi – LT1 Rural</h2>
 
-<label>Historical Average Units (A)</label>
-<input id="avg" type="number" placeholder="Example: 166">
+<label>Historical Average (A)</label>
+<input id="avg" type="number" placeholder="Example: 93">
 
-<label>Expected This Month Units (U)</label>
-<input id="use" type="number" placeholder="Example: 185">
+<label>This Month Units (U)</label>
+<input id="use" type="number" placeholder="Example: 119">
 
-<button onclick="calc()">Check My Bill</button>
+<button onclick="calc()">Calculate Bill</button>
 
-<div id="result"></div>
+<div id="out"></div>
+</div>
 </div>
 
 <script>
+function energyCost(u){
+let cost=0;
+if(u>0){ let a=Math.min(50,u); cost+=a*4.75; u-=a;}
+if(u>0){ let b=Math.min(50,u); cost+=b*5.90; u-=b;}
+if(u>0){ let c=Math.min(100,u); cost+=c*7.15; u-=c;}
+if(u>0){ cost+=u*8.20; }
+return cost;
+}
+
 function calc(){
-let A = parseFloat(document.getElementById("avg").value);
-let U = parseFloat(document.getElementById("use").value);
-let R = 9.4; // blended average tariff
+let A=parseFloat(avg.value);
+let U=parseFloat(use.value);
+if(!A||!U){alert("Enter both values");return;}
 
-if(!A || !U){ alert("Enter both values"); return; }
+let free=Math.round(A*1.10);         // Govt free block
+let energy=energyCost(U);
+let fixed=435;
+let fac=U*0.36;
+let tax=(energy+fac)*0.09;
+let total=Math.round(energy+fixed+fac+tax);
 
-let free = A * 1.10;
-let excess = Math.max(0, U - free);
-let pay = Math.round(excess * R);
-let total = Math.round(U * R);
-let gok = total - pay;
+// subsidy logic (Gruha Jyothi)
+let status, pay, gok;
+if(A>200){
+  pay=total; gok=0; status="<span class='red'>SUBSIDY LOST (Avg>200)</span>";
+}else if(U<=free+20){   // BESCOM hidden buffer block
+  pay=0; gok=total; status="<span class='green'>FULL FREE ZONE</span>";
+}else{
+  let excess=U-(free+20);
+  let blended=total/U;
+  pay=Math.round(excess*blended);
+  gok=total-pay;
+  status="<span class='orange'>PARTIAL FREE ZONE</span>";
+}
 
-let status = "";
-if(A > 200) status = "<span class='red'>SUBSIDY LOST PERMANENTLY</span>";
-else if(U <= free) status = "<span class='green'>FULL FREE ZONE</span>";
-else status = "<span class='orange'>PARTIAL FREE ZONE</span>";
-
-document.getElementById("result").innerHTML = `
+out.innerHTML=`
 <hr>
-<b>Status:</b> ${status}<br><br>
-<b>Free Limit:</b> ${free.toFixed(0)} units<br>
-<b>Excess Units:</b> ${excess.toFixed(1)}<br>
-<b>Estimated Real Bill:</b> ₹${total}<br>
-<b>GOK Subsidy:</b> ₹${gok}<br>
-<b>You May Pay:</b> ₹${pay}<br>
-<b>Safe Remaining Units:</b> ${(free-U).toFixed(1)}
+${status}<br><br>
+<div class="grid">
+<div class="box"><b>Free Limit</b><br>${free+20} units</div>
+<div class="box"><b>Energy</b><br>₹${energy.toFixed(0)}</div>
+<div class="box"><b>FAC</b><br>₹${fac.toFixed(0)}</div>
+<div class="box"><b>Tax</b><br>₹${tax.toFixed(0)}</div>
+<div class="box"><b>Total Bill</b><br>₹${total}</div>
+<div class="box"><b>GOK Pays</b><br>₹${gok}</div>
+<div class="box"><b>You Pay</b><br>₹${pay}</div>
+<div class="box"><b>Safe Remaining</b><br>${(free+20-U).toFixed(1)}</div>
+</div>
 `;
 }
 </script>
-
 </body>
 </html>
