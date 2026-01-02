@@ -60,9 +60,9 @@ let energy=energyCost(U),fixed=435,fac=U*0.36,tax=(energy+fac)*0.09;
 let total=Math.round(energy+fixed+fac+tax);
 let status,pay,gok;
 
-if(A>200){
- status="<div class='dangerGlow'>SUBSIDY LOST</div>";
- pay=total;gok=0;
+if(A>200 || U>200){
+  status="<div class='dangerGlow'>SUBSIDY NOT APPLICABLE</div>";
+  pay=total; gok=0;
 }else if(U<=free+20){
  status="<div class='freeGlow'>FULL FREE ZONE</div>";
  pay=0;gok=total;
