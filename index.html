@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BESCOM Subsidy Predictor</title>
+<style>
+body {font-family: Arial; background:#f5f5f5; padding:15px;}
+.card {background:#fff;padding:15px;border-radius:10px;box-shadow:0 0 10px rgba(0,0,0,.1)}
+input,button {width:100%;padding:12px;margin:10px 0;font-size:16px}
+button {background:#007bff;color:white;border:none;border-radius:8px}
+.green {color:green;font-weight:bold}
+.red {color:red;font-weight:bold}
+.orange {color:orange;font-weight:bold}
+</style>
+</head>
+<body>
+
+<div class="card">
+<h2>BESCOM Free Power Calculator</h2>
+
+<label>Historical Average Units (A)</label>
+<input id="avg" type="number" placeholder="Example: 166">
+
+<label>Expected This Month Units (U)</label>
+<input id="use" type="number" placeholder="Example: 185">
+
+<button onclick="calc()">Check My Bill</button>
+
+<div id="result"></div>
+</div>
+
+<script>
+function calc(){
+let A = parseFloat(document.getElementById("avg").value);
+let U = parseFloat(document.getElementById("use").value);
+let R = 9.4; // blended average tariff
+
+if(!A || !U){ alert("Enter both values"); return; }
+
+let free = A * 1.10;
+let excess = Math.max(0, U - free);
+let pay = Math.round(excess * R);
+let total = Math.round(U * R);
+let gok = total - pay;
+
+let status = "";
+if(A > 200) status = "<span class='red'>SUBSIDY LOST PERMANENTLY</span>";
+else if(U <= free) status = "<span class='green'>FULL FREE ZONE</span>";
+else status = "<span class='orange'>PARTIAL FREE ZONE</span>";
+
+document.getElementById("result").innerHTML = `
+<hr>
+<b>Status:</b> ${status}<br><br>
+<b>Free Limit:</b> ${free.toFixed(0)} units<br>
+<b>Excess Units:</b> ${excess.toFixed(1)}<br>
+<b>Estimated Real Bill:</b> ₹${total}<br>
+<b>GOK Subsidy:</b> ₹${gok}<br>
+<b>You May Pay:</b> ₹${pay}<br>
+<b>Safe Remaining Units:</b> ${(free-U).toFixed(1)}
+`;
+}
+</script>
+
+</body>
+</html>
