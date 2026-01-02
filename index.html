@@ -2,19 +2,26 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>BESCOM Gruha Jyothi – LT1 Rural</title>
+<title>Gruha Jyothi – LT1 Rural</title>
 <style>
 body{margin:0;background:#eef2f7;font-family:system-ui}
 .app{max-width:420px;margin:auto;padding:16px}
-.card{background:#fff;border-radius:14px;padding:18px;box-shadow:0 6px 20px rgba(0,0,0,.1)}
-h2{text-align:center;color:#003366;margin-top:0}
+.card{background:#fff;border-radius:16px;padding:18px;box-shadow:0 6px 25px rgba(0,0,0,.15)}
+h2{text-align:center;color:#003366}
 input,button{width:100%;padding:12px;margin-top:10px;font-size:16px;border-radius:10px;border:1px solid #ccc}
 button{background:#0066ff;color:#fff;border:none;font-weight:bold}
-.green{color:#0a8a00;font-weight:bold}
-.orange{color:#cc7a00;font-weight:bold}
-.red{color:#cc0000;font-weight:bold}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
-.box{background:#f5f7fb;padding:10px;border-radius:8px;text-align:center}
+
+.freeGlow{animation:glow 1s infinite alternate;color:#0a8a00;font-weight:bold;text-align:center}
+@keyframes glow{from{text-shadow:0 0 5px #7CFC00}to{text-shadow:0 0 18px #00ff00}}
+
+.dangerGlow{animation:redglow 1s infinite alternate;color:#cc0000;font-weight:bold;text-align:center}
+@keyframes redglow{from{text-shadow:0 0 5px #ff9999}to{text-shadow:0 0 18px #ff0000}}
+
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.box{background:#f5f7fb;padding:10px;border-radius:10px;text-align:center}
+
+.payZero{color:#0a8a00;font-weight:bold;font-size:20px;animation:blink 1s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
 </style>
 </head>
 <body>
@@ -24,67 +31,58 @@ button{background:#0066ff;color:#fff;border:none;font-weight:bold}
 <h2>Gruha Jyothi – LT1 Rural</h2>
 
 <label>Historical Average (A)</label>
-<input id="avg" type="number" placeholder="Example: 93">
+<input id="avg" type="number">
 
 <label>This Month Units (U)</label>
-<input id="use" type="number" placeholder="Example: 119">
+<input id="use" type="number">
 
-<button onclick="calc()">Calculate Bill</button>
-
+<button onclick="calc()">Calculate</button>
 <div id="out"></div>
 </div>
 </div>
 
 <script>
 function energyCost(u){
-let cost=0;
-if(u>0){ let a=Math.min(50,u); cost+=a*4.75; u-=a;}
-if(u>0){ let b=Math.min(50,u); cost+=b*5.90; u-=b;}
-if(u>0){ let c=Math.min(100,u); cost+=c*7.15; u-=c;}
-if(u>0){ cost+=u*8.20; }
-return cost;
+let c=0;
+if(u>0){let a=Math.min(50,u);c+=a*4.75;u-=a;}
+if(u>0){let b=Math.min(50,u);c+=b*5.90;u-=b;}
+if(u>0){let d=Math.min(100,u);c+=d*7.15;u-=d;}
+if(u>0){c+=u*8.20;}
+return c;
 }
 
 function calc(){
-let A=parseFloat(avg.value);
-let U=parseFloat(use.value);
-if(!A||!U){alert("Enter both values");return;}
+let A=+avg.value,U=+use.value;
+if(!A||!U)return;
 
-let free=Math.round(A*1.10);         // Govt free block
-let energy=energyCost(U);
-let fixed=435;
-let fac=U*0.36;
-let tax=(energy+fac)*0.09;
+let free=Math.round(A*1.10);
+let energy=energyCost(U),fixed=435,fac=U*0.36,tax=(energy+fac)*0.09;
 let total=Math.round(energy+fixed+fac+tax);
+let status,pay,gok;
 
-// subsidy logic (Gruha Jyothi)
-let status, pay, gok;
 if(A>200){
-  pay=total; gok=0; status="<span class='red'>SUBSIDY LOST (Avg>200)</span>";
-}else if(U<=free+20){   // BESCOM hidden buffer block
-  pay=0; gok=total; status="<span class='green'>FULL FREE ZONE</span>";
+ status="<div class='dangerGlow'>SUBSIDY LOST</div>";
+ pay=total;gok=0;
+}else if(U<=free+20){
+ status="<div class='freeGlow'>FULL FREE ZONE</div>";
+ pay=0;gok=total;
 }else{
-  let excess=U-(free+20);
-  let blended=total/U;
-  pay=Math.round(excess*blended);
-  gok=total-pay;
-  status="<span class='orange'>PARTIAL FREE ZONE</span>";
+ let ex=U-(free+20),blend=total/U;
+ pay=Math.round(ex*blend);gok=total-pay;
+ status="<div style='color:orange;font-weight:bold;text-align:center'>PARTIAL FREE ZONE</div>";
 }
 
 out.innerHTML=`
 <hr>
-${status}<br><br>
+${status}
 <div class="grid">
-<div class="box"><b>Free Limit</b><br>${free+20} units</div>
-<div class="box"><b>Energy</b><br>₹${energy.toFixed(0)}</div>
-<div class="box"><b>FAC</b><br>₹${fac.toFixed(0)}</div>
-<div class="box"><b>Tax</b><br>₹${tax.toFixed(0)}</div>
 <div class="box"><b>Total Bill</b><br>₹${total}</div>
 <div class="box"><b>GOK Pays</b><br>₹${gok}</div>
-<div class="box"><b>You Pay</b><br>₹${pay}</div>
-<div class="box"><b>Safe Remaining</b><br>${(free+20-U).toFixed(1)}</div>
-</div>
-`;
+<div class="box"><b>You Pay</b><br>${pay==0?'<span class="payZero">₹0</span>':'₹'+pay}</div>
+<div class="box"><b>Free Limit</b><br>${free+20}</div>
+<div class="box"><b>Energy</b><br>₹${energy.toFixed(0)}</div>
+<div class="box"><b>FAC</b><br>₹${fac.toFixed(0)}</div>
+</div>`;
 }
 </script>
 </body>
